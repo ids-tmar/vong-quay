@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vòng Quay May Mắn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Paytone+One&display=swap&subset=vietnamese">
+<style>
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+
+/* Layout: kiosk card — form on the left, carnival wheel on the right; stacks on phones. Admin tab swaps in a settings + roster view. */
+:root{
+  --bg:#eef2ee; --surface:#ffffff; --surface-2:#f6f8f5; --ink:#17323a; --muted:#5b6d70; --line:#d6dfda;
+  --accent:#e2532d; --accent-ink:#ffffff; --gold:#f2b134; --ok:#2e7d5b; --warn:#b5481f;
+  --seg1:#1f6f78; --seg2:#f2b134; --seg3:#e2532d; --seg4:#8cc7a8; --seg5:#17323a; --seg6:#f6dfb4;
+  --rim:#17323a; --bulb:#ffe7a3;
+  --f-display:"Paytone One","Arial Rounded MT Bold",system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1b1f; --surface:#15272c; --surface-2:#1a2f35; --ink:#e7efe9; --muted:#97aaa9; --line:#2a4148;
+  --accent:#ff7550; --accent-ink:#1a0d08; --gold:#f5c053; --ok:#6fcf9f; --warn:#ff9b78;
+  --seg1:#2b8f99; --seg2:#f5c053; --seg3:#ff7550; --seg4:#8fd0ae; --seg5:#24464f; --seg6:#f3dcae;
+  --rim:#0a1417; --bulb:#ffe7a3; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1b1f; --surface:#15272c; --surface-2:#1a2f35; --ink:#e7efe9; --muted:#97aaa9; --line:#2a4148;
+  --accent:#ff7550; --accent-ink:#1a0d08; --gold:#f5c053; --ok:#6fcf9f; --warn:#ff9b78;
+  --seg1:#2b8f99; --seg2:#f5c053; --seg3:#ff7550; --seg4:#8fd0ae; --seg5:#24464f; --seg6:#f3dcae;
+  --rim:#0a1417; --bulb:#ffe7a3; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,5vw,44px);line-height:1.05;margin:4px 0 0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0;line-height:1.2}
+h3{font-size:15px;margin:0;font-weight:700}
+.tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:600 14px var(--f-body);padding:8px 16px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.notice{background:var(--surface-2);border:1px dashed var(--line);border-radius:12px;padding:10px 14px;font-size:13.5px;color:var(--muted)}
+.notice strong{color:var(--ink)}
+
+/* play view */
+.play{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+@media (max-width:820px){.play{grid-template-columns:1fr}.wheel-col{order:-1}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.steps{display:flex;gap:8px;font-size:13px;color:var(--muted);font-weight:600}
+.steps span{display:inline-flex;align-items:center;gap:6px}
+.steps i{font-style:normal;width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;border:1.5px solid var(--line);font-size:12px}
+.steps .on{color:var(--ink)} .steps .on i{background:var(--gold);border-color:var(--gold);color:#17323a}
+.steps .done i{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+form{display:flex;flex-direction:column;gap:14px}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13.5px}
+label.f small{font-weight:400;color:var(--muted)}
+input[type=text],input[type=tel],input[type=email],input[type=number]{font:500 16px var(--f-body);color:var(--ink);background:var(--surface-2);
+  border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input[aria-invalid="true"]{border-color:var(--warn)}
+.err{color:var(--warn);font-size:13px;font-weight:500;min-height:0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted)}
+.check input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.btn{font:700 15px var(--f-body);border:0;border-radius:12px;padding:12px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:13px;border-radius:10px}
+.who{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--surface-2);border-radius:12px;padding:12px 14px;flex-wrap:wrap}
+.who b{font-size:16px}
+.who .meta{color:var(--muted);font-size:13px}
+.spins{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);font-weight:600}
+.tick{width:14px;height:14px;border-radius:4px;background:var(--gold)}
+.tick.used{background:var(--line)}
+
+.wheel-col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.wheel-box{position:relative;width:min(100%,460px);aspect-ratio:1;max-width:100%}
+.wheel-box canvas{width:100%;height:100%;display:block}
+.pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:40px;height:52px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.25))}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:24%;aspect-ratio:1;border-radius:50%;border:5px solid var(--rim);
+  background:var(--gold);color:#17323a;font-family:var(--f-display);font-size:clamp(15px,3.4vw,22px);cursor:pointer;box-shadow:0 4px 0 var(--rim);transition:transform .12s}
+.hub:not(:disabled):hover{transform:translate(-50%,-52%)}
+.hub:disabled{cursor:not-allowed;filter:saturate(.4)}
+.hint{font-size:13.5px;color:var(--muted);text-align:center;min-height:1.5em}
+
+.result{border:2px solid var(--gold);background:var(--surface);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;width:min(100%,460px);text-align:center;animation:pop .35s ease-out}
+.result .prize{font-family:var(--f-display);font-size:clamp(24px,5vw,32px);line-height:1.1;color:var(--accent)}
+.result .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@keyframes pop{from{transform:scale(.94);opacity:.4}to{transform:none;opacity:1}}
+
+/* admin view */
+.admin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:20px;align-items:start}
+@media (max-width:900px){.admin{grid-template-columns:1fr}}
+.prize-row{display:grid;grid-template-columns:14px minmax(0,1fr) 72px 44px 32px;gap:8px;align-items:center}
+.prize-row .sw{width:14px;height:14px;border-radius:4px}
+.prize-row input{padding:8px 10px;font-size:14px}
+.prize-row .pct{font-size:12.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.icon-btn{border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;border-radius:8px;height:32px}
+.icon-btn:hover{background:var(--surface-2);color:var(--warn)}
+.cols-head{display:grid;grid-template-columns:14px minmax(0,1fr) 72px 44px 32px;gap:8px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:var(--surface-2);border-radius:12px;padding:12px}
+.stat b{display:block;font-family:var(--f-display);font-weight:400;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:var(--muted)}
+.tally{display:flex;flex-direction:column;gap:6px}
+.tally .t{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:13px}
+.tally .bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:3px}
+.tally .bar i{display:block;height:100%}
+.tally .n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:620px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:1px 9px;margin:0 4px 4px 0;font-size:12.5px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.empty b{color:var(--ink);display:block;margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:10;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){.result{animation:none}.hub{transition:none}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="modeLabel">Đang tải…</div>
+      <h1 id="eventTitle">Vòng quay may mắn</h1>
+    </div>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section class="play">
+    <div class="panel">
+      <div class="steps">
+        <span id="st1" class="on"><i>1</i>Nhập thông tin</span>
+        <span id="st2"><i>2</i>Quay thưởng</span>
+      </div>
+      <form id="form" novalidate>
+        <h2>Điền thông tin để nhận lượt quay</h2>
+        <label class="f">Họ và tên
+          <input type="text" id="fName" autocomplete="name" placeholder="Nguyễn Thị Lan" maxlength="80">
+        </label>
+        <label class="f">Số điện thoại <small>Mỗi số điện thoại có <span class="limitText">1 lượt</span> quay</small>
+          <input type="tel" id="fPhone" inputmode="tel" autocomplete="tel" placeholder="0901 234 567" maxlength="16">
+        </label>
+        <label class="f">Email <small>Không bắt buộc</small>
+          <input type="email" id="fEmail" autocomplete="email" placeholder="lan@example.com" maxlength="120">
+        </label>
+        <label class="check"><input type="checkbox" id="fConsent">
+          <span>Tôi đồng ý để chương trình lưu thông tin trên nhằm liên hệ trao thưởng.</span></label>
+        <div class="err" id="formErr" role="alert"></div>
+        <button class="btn" type="submit" id="submitBtn">Nhận lượt quay</button>
+      </form>
+
+      <div id="whoBox" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="who">
+          <div><b id="whoName"></b><div class="meta" id="whoPhone"></div></div>
+          <div class="spins" id="whoSpins"></div>
+        </div>
+        <p class="hint" style="text-align:left;margin:0" id="whoHint"></p>
+        <button class="btn ghost" type="button" id="switchBtn">Đổi người chơi</button>
+      </div>
+    </div>
+
+    <div class="wheel-col">
+      <div class="wheel-box">
+        <canvas id="wheel" width="920" height="920" aria-label="Vòng quay giải thưởng"></canvas>
+        <svg class="pointer" viewBox="0 0 40 52" aria-hidden="true"><path d="M20 50 L3 10 A18 18 0 0 1 37 10 Z" fill="var(--accent)" stroke="var(--rim)" stroke-width="3"/><circle cx="20" cy="15" r="5" fill="var(--bulb)"/></svg>
+        <button class="hub" id="spinBtn" disabled>QUAY</button>
+      </div>
+      <div class="hint" id="hint">Nhập thông tin bên cạnh để mở khoá lượt quay.</div>
+      <div class="result" id="result" hidden aria-live="polite">
+        <div class="eyebrow">Kết quả của <span id="resName"></span></div>
+        <div class="prize" id="resPrize"></div>
+        <div class="row">
+          <button class="btn" id="againBtn" hidden>Quay tiếp</button>
+          <button class="btn ghost" id="nextBtn">Người tiếp theo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =====================================================================
+   DÁN ĐƯỜNG LINK WEB APP CỦA GOOGLE APPS SCRIPT VÀO GIỮA HAI DẤU NHÁY
+   Ví dụ: "https://script.google.com/macros/s/AKfy.../exec"
+   Để trống thì trang chạy chế độ thử (không lưu gì).
+   ===================================================================== */
+const API_URL = "https://script.google.com/macros/s/AKfycbwsJNWHM0sVBRmE46cI_X-zOfqfpKeGU9YjfqwnQkLBq-qhk38jqYvMh5vplAhxXMvg/exec";
+
+(() => {
+const DEFAULTS = {
+  eventName: "Vòng quay may mắn", spinsPerPerson: 1,
+  prizes: [
+    { label: "Giảm 10%", weight: 30 }, { label: "Ly nước miễn phí", weight: 15 },
+    { label: "Chúc may mắn lần sau", weight: 25 }, { label: "Giảm 20%", weight: 10 },
+    { label: "Bánh ngọt", weight: 15 }, { label: "Giải đặc biệt", weight: 5 },
+  ],
+};
+const $ = id => document.getElementById(id);
+let settings = JSON.parse(JSON.stringify(DEFAULTS));
+let current = null, spinning = false, rotation = 0;
+const demo = !API_URL;
+const demoUsed = {};
+
+/* ---------- gọi máy chủ (Apps Script) ---------- */
+async function api(payload) {
+  // Gửi dạng text/plain để trình duyệt không chặn (CORS)
+  const r = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+  return r.json();
+}
+async function loadSettings() {
+  const r = await fetch(API_URL);
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.error);
+  return d.settings;
+}
+
+/* ---------- tiện ích ---------- */
+const normPhone = s => { let d = String(s || "").replace(/\D/g, ""); if (d.startsWith("84") && d.length === 11) d = "0" + d.slice(2); return d; };
+const fmtPhone = d => d.length === 10 ? `${d.slice(0,4)} ${d.slice(4,7)} ${d.slice(7)}` : d;
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const segColors = () => [1,2,3,4,5,6].map(i => cssVar("--seg" + i));
+function textOn(hex) {
+  const m = hex.replace("#", ""); if (m.length < 6) return "#17323a";
+  const [r,g,b] = [0,2,4].map(i => parseInt(m.slice(i, i+2), 16) / 255).map(c => c <= .03928 ? c/12.92 : Math.pow((c+.055)/1.055, 2.4));
+  return (0.2126*r + 0.7152*g + 0.0722*b) > 0.36 ? "#17323a" : "#ffffff";
+}
+const remaining = p => Math.max(0, settings.spinsPerPerson - (p ? p.used : 0));
+
+/* ---------- vẽ vòng quay ---------- */
+const cv = $("wheel"), ctx = cv.getContext("2d");
+function drawWheel() {
+  const W = cv.width, c = W / 2, R = c - 26, prizes = settings.prizes, n = prizes.length, seg = 2 * Math.PI / n;
+  const cols = segColors(), rim = cssVar("--rim"), bulb = cssVar("--bulb"), gold = cssVar("--gold");
+  ctx.clearRect(0, 0, W, W);
+  ctx.beginPath(); ctx.arc(c, c, c - 4, 0, Math.PI * 2); ctx.fillStyle = rim; ctx.fill();
+  ctx.save(); ctx.translate(c, c); ctx.rotate(rotation * Math.PI / 180);
+  for (let i = 0; i < n; i++) {
+    const a0 = -Math.PI / 2 + i * seg, a1 = a0 + seg;
+    let col = cols[i % cols.length]; if (i === n - 1 && n % cols.length === 1) col = cols[2];
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, a0, a1); ctx.closePath();
+    ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = rim; ctx.stroke();
+    ctx.save(); ctx.rotate(a0 + seg / 2); ctx.fillStyle = textOn(col); ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    const label = prizes[i].label || "";
+    let size = n > 8 ? 30 : 36; ctx.font = `700 ${size}px "Be Vietnam Pro", system-ui, sans-serif`;
+    const maxW = R * 0.62, words = label.split(/\s+/); let lines = [label];
+    if (ctx.measureText(label).width > maxW && words.length > 1) {
+      let best = 1, diff = 1e9;
+      for (let k = 1; k < words.length; k++) { const d = Math.abs(ctx.measureText(words.slice(0,k).join(" ")).width - ctx.measureText(words.slice(k).join(" ")).width); if (d < diff) { diff = d; best = k; } }
+      lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+    }
+    while (size > 18 && Math.max(...lines.map(l => ctx.measureText(l).width)) > maxW) { size -= 2; ctx.font = `700 ${size}px "Be Vietnam Pro", system-ui, sans-serif`; }
+    const lh = size * 1.08, x = R - 30;
+    lines.forEach((l, k) => ctx.fillText(l, x, (k - (lines.length - 1) / 2) * lh));
+    ctx.restore();
+  }
+  ctx.restore();
+  for (let i = 0; i < 24; i++) {
+    const a = i / 24 * Math.PI * 2;
+    ctx.beginPath(); ctx.arc(c + Math.cos(a) * (c - 15), c + Math.sin(a) * (c - 15), 7, 0, Math.PI * 2);
+    ctx.fillStyle = (i % 2 === (spinning ? Math.floor(performance.now()/120) % 2 : 0)) ? bulb : gold; ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(c, c, R * 0.14, 0, Math.PI * 2); ctx.fillStyle = rim; ctx.fill();
+}
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawWheel); } catch {}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
+
+function animateTo(index) {
+  return new Promise(res => {
+    const segDeg = 360 / settings.prizes.length;
+    const want = -((index + 0.5) * segDeg) + (Math.random() - .5) * segDeg * 0.6;
+    const cur = ((rotation % 360) + 360) % 360;
+    const delta = (((want - cur) % 360) + 360) % 360;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = rotation, end = rotation + delta + (reduce ? 360 : 360 * 6);
+    const dur = reduce ? 700 : 5200, t0 = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 4);
+    (function frame(now) {
+      const t = Math.min(1, (now - t0) / dur);
+      rotation = start + (end - start) * ease(t); drawWheel();
+      if (t < 1) requestAnimationFrame(frame); else { rotation = end % 360; res(); }
+    })(performance.now());
+  });
+}
+
+/* ---------- giao diện ---------- */
+function applySettings(s) {
+  if (s && s.prizes && s.prizes.length >= 2) settings = s;
+  document.querySelectorAll(".limitText").forEach(e => e.textContent = settings.spinsPerPerson + " lượt");
+  $("eventTitle").textContent = settings.eventName; document.title = settings.eventName;
+  drawWheel(); renderWho();
+}
+function renderWho() {
+  const has = !!current;
+  $("form").hidden = has; $("whoBox").hidden = !has;
+  $("st1").className = has ? "done" : "on"; $("st2").className = has ? "on" : "";
+  if (!has) { $("spinBtn").disabled = true; $("hint").textContent = "Nhập thông tin bên cạnh để mở khoá lượt quay."; return; }
+  $("whoName").textContent = current.name; $("whoPhone").textContent = fmtPhone(current.phone);
+  const box = $("whoSpins"); box.textContent = "";
+  for (let i = 0; i < Math.min(settings.spinsPerPerson, 20); i++) { const t = document.createElement("span"); t.className = "tick" + (i < current.used ? " used" : ""); box.appendChild(t); }
+  const left = remaining(current);
+  box.appendChild(document.createTextNode(` Còn ${left}/${settings.spinsPerPerson} lượt`));
+  $("spinBtn").disabled = spinning || left <= 0;
+  $("whoHint").textContent = left > 0 ? "Bấm nút QUAY ở giữa vòng để bắt đầu." : "Bạn đã dùng hết lượt quay. Cảm ơn bạn đã tham gia!";
+  $("hint").textContent = spinning ? "Đang quay…" : left > 0 ? `${current.name}, bấm QUAY nhé!` : "Đã hết lượt cho số điện thoại này.";
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = $("fName").value.trim(), phone = normPhone($("fPhone").value), email = $("fEmail").value.trim();
+  const err = $("formErr"); err.textContent = "";
+  if (name.length < 2) { err.textContent = "Vui lòng nhập họ tên."; $("fName").focus(); return; }
+  if (!/^0\d{9}$/.test(phone)) { err.textContent = "Số điện thoại cần đủ 10 số và bắt đầu bằng 0."; $("fPhone").focus(); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = "Email chưa đúng định dạng."; $("fEmail").focus(); return; }
+  if (!$("fConsent").checked) { err.textContent = "Vui lòng đánh dấu đồng ý lưu thông tin."; return; }
+  const btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Đang kiểm tra…";
+  try {
+    if (demo) { current = { name, phone, used: demoUsed[phone] || 0 }; }
+    else {
+      const d = await api({ action: "register", name, phone, email });
+      if (!d.ok) { err.textContent = d.error; return; }
+      applySettings(d.settings); current = d.player;
+    }
+    if (remaining(current) <= 0) { err.textContent = `Số ${fmtPhone(phone)} đã dùng hết ${settings.spinsPerPerson} lượt quay.`; current = null; return; }
+    $("result").hidden = true; renderWho();
+    if (window.innerWidth < 820) $("spinBtn").scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch { err.textContent = "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."; }
+  finally { btn.disabled = false; btn.textContent = "Nhận lượt quay"; }
+});
+
+$("spinBtn").addEventListener("click", async () => {
+  if (!current || spinning || remaining(current) <= 0) return;
+  spinning = true; renderWho(); $("result").hidden = true;
+  let idx, prize;
+  try {
+    if (demo) {
+      const ws = settings.prizes.map(p => p.weight), total = ws.reduce((a, b) => a + b, 0);
+      let r = Math.random() * total; idx = ws.findIndex(w => (r -= w) < 0); if (idx < 0) idx = ws.length - 1;
+      prize = settings.prizes[idx].label; current.used++; demoUsed[current.phone] = current.used;
+    } else {
+      const d = await api({ action: "spin", phone: current.phone });   // máy chủ chọn giải và ghi vào Sheet
+      if (d.settings) applySettings(d.settings);
+      if (!d.ok) { spinning = false; if (d.player) current = d.player; renderWho(); $("hint").textContent = d.error; return; }
+      idx = d.index; prize = d.prize; current = d.player;
+    }
+  } catch { spinning = false; renderWho(); $("hint").textContent = "Không kết nối được máy chủ. Bấm QUAY để thử lại."; return; }
+  await animateTo(idx);
+  spinning = false; drawWheel();
+  $("resName").textContent = current.name; $("resPrize").textContent = prize;
+  $("againBtn").hidden = remaining(current) <= 0; $("result").hidden = false; renderWho();
+});
+$("againBtn").addEventListener("click", () => { $("result").hidden = true; $("spinBtn").click(); });
+function resetPlayer() { current = null; $("form").reset(); $("formErr").textContent = ""; $("result").hidden = true; renderWho(); $("fName").focus(); }
+$("nextBtn").addEventListener("click", resetPlayer);
+$("switchBtn").addEventListener("click", resetPlayer);
+
+/* ---------- khởi động ---------- */
+(async () => {
+  applySettings();
+  if (demo) {
+    $("modeLabel").textContent = "Chế độ thử";
+    const n = $("notice"); n.hidden = false;
+    n.innerHTML = "<strong>Chưa kết nối Google Sheet.</strong> Trang đang chạy thử, không lưu dữ liệu. Dán link Web App vào dòng <code>API_URL</code> trong file index.html để bật lưu thật.";
+    return;
+  }
+  try { applySettings(await loadSettings()); $("modeLabel").textContent = "Chương trình đang diễn ra"; }
+  catch { $("modeLabel").textContent = "Mất kết nối"; const n = $("notice"); n.hidden = false; n.textContent = "Không tải được cài đặt từ Google Sheet. Kiểm tra lại link API_URL và quyền truy cập Web App (Anyone)."; }
+})();
+})();
+</script>
+</body>
+</html>
